@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/WoodoCoin/cli"
 	"github.com/WoodoCoin/db"
 )
@@ -8,4 +10,5 @@ import (
 func main() {
 	defer db.Close()
 	cli.Start()
+	fmt.Println("helloworld")
 }
