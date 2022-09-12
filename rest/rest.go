@@ -205,6 +205,6 @@ func Start(aPort int) {
 	router.HandleFunc("/transactions", transactions).Methods("POST")
 	router.HandleFunc("/ws", p2p.Upgrade).Methods("GET")
 	router.HandleFunc("/peers", peers).Methods("GET", "POST")
-	fmt.Printf("Listening on http://localhost:%s\n", port)
+	fmt.Printf("Listening on http://localhost%s\n", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }
