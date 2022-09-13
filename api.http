@@ -19,7 +19,7 @@ POST http://localhost:4000/transactions
 http://localhost:4000/mempool
 
 ###
-http://localhost:4000/balance/2f9937b299d5dabba4d975f2872fb1ed1a987901dca9bc096fe3a5aec602213a90061836ccb9759ae92a0844d6b998a8c2a36f3f99c190124025569ad219fc3b
+http://localhost:4000/balance/Gabeen
 
 ###
 POST http://localhost:4000/peers
@@ -28,6 +28,9 @@ POST http://localhost:4000/peers
     "address": "127.0.0.1",
     "port": "3000"
 }
+
+###
+http://localhost:4000/peers
 
 
 
