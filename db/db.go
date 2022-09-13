@@ -2,7 +2,7 @@ package db
 
 import (
 	"github.com/WoodoCoin/utils"
-	"github.com/boltdb/bolt"
+	bolt "go.etcd.io/bbolt"
 )
 
 const (
