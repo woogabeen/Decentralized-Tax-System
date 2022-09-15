@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/WoodoCoin/utils"
@@ -12,7 +13,9 @@ const (
 	minerReward int = 50
 )
 
-var Mempool *mempool = &mempool{}
+var m *mempool = &mempool{}
+
+var memOnce sync.Once
 
 var ErrorNoMoney = errors.New("Not Enough Money")
 
@@ -20,6 +23,7 @@ var ErrorNotValid = errors.New("Transaction Invalid")
 
 type mempool struct {
 	Txs []*Tx
+	m   sync.Mutex
 }
 
 type Tx struct {
@@ -44,6 +48,13 @@ type UTxOut struct {
 	TxID   string
 	Index  int
 	Amount int
+}
+
+func Mempool() *mempool {
+	memOnce.Do(func() {
+		m = &mempool{}
+	})
+	return m
 }
 
 func (t *Tx) getId() {
@@ -77,7 +88,7 @@ func validate(tx *Tx) bool {
 func isOnMempool(uTxOut *UTxOut) bool {
 	exists := false
 Outer:
-	for _, tx := range Mempool.Txs {
+	for _, tx := range Mempool().Txs {
 		for _, input := range tx.TxIns {
 			if input.TxID == uTxOut.TxID && input.Index == uTxOut.Index {
 				exists = true
@@ -147,13 +158,13 @@ func makeTx(from, to string, amount int) (*Tx, error) {
 	return tx, nil
 }
 
-func (m *mempool) AddTx(to string, amount int) error {
+func (m *mempool) AddTx(to string, amount int) (*Tx, error) {
 	tx, err := makeTx(wallet.Wallet().Address, to, amount)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	m.Txs = append(m.Txs, tx)
-	return nil
+	return tx, nil
 }
 
 func (m *mempool) txToConfirm() []*Tx {
@@ -162,4 +173,11 @@ func (m *mempool) txToConfirm() []*Tx {
 	txs = append(txs, coinbase)
 	m.Txs = nil
 	return txs
+}
+
+func (m *mempool) AddPeerTx(tx *Tx) {
+	m.m.Lock()
+	defer m.m.Unlock()
+
+	m.Txs = append(m.Txs, tx)
 }
