@@ -13,17 +13,21 @@ const (
 	minerReward int = 50
 )
 
-var m *mempool = &mempool{}
-
-var memOnce sync.Once
-
-var ErrorNoMoney = errors.New("Not Enough Money")
-
-var ErrorNotValid = errors.New("Transaction Invalid")
-
 type mempool struct {
 	Txs map[string]*Tx
 	m   sync.Mutex
+}
+
+var m *mempool
+var memOnce sync.Once
+
+func Mempool() *mempool {
+	memOnce.Do(func() {
+		m = &mempool{
+			Txs: make(map[string]*Tx),
+		}
+	})
+	return m
 }
 
 type Tx struct {
@@ -45,18 +49,9 @@ type TxOut struct {
 }
 
 type UTxOut struct {
-	TxID   string
-	Index  int
-	Amount int
-}
-
-func Mempool() *mempool {
-	memOnce.Do(func() {
-		m = &mempool{
-			Txs: make(map[string]*Tx),
-		}
-	})
-	return m
+	TxID   string `json:"txId"`
+	Index  int    `json:"index"`
+	Amount int    `json:"amount"`
 }
 
 func (t *Tx) getId() {
@@ -73,7 +68,6 @@ func validate(tx *Tx) bool {
 	valid := true
 	for _, txIn := range tx.TxIns {
 		prevTx := FindTx(Blockchain(), txIn.TxID)
-
 		if prevTx == nil {
 			valid = false
 			break
@@ -87,8 +81,7 @@ func validate(tx *Tx) bool {
 	return valid
 }
 
-func isOnMempool(uTxOut *UTxOut) bool {
-	exists := false
+func isOnMempool(uTxOut *UTxOut) (exists bool) {
 Outer:
 	for _, tx := range Mempool().Txs {
 		for _, input := range tx.TxIns {
@@ -98,18 +91,16 @@ Outer:
 			}
 		}
 	}
-	return exists
+	return
 }
 
 func makeCoinbaseTx(address string) *Tx {
 	txIns := []*TxIn{
 		{"", -1, "COINBASE"},
 	}
-
 	txOuts := []*TxOut{
 		{address, minerReward},
 	}
-
 	tx := Tx{
 		ID:        "",
 		Timestamp: int(time.Now().Unix()),
@@ -120,15 +111,17 @@ func makeCoinbaseTx(address string) *Tx {
 	return &tx
 }
 
+var ErrorNoMoney = errors.New("not enough 돈")
+var ErrorNotValid = errors.New("Tx Invalid")
+
 func makeTx(from, to string, amount int) (*Tx, error) {
 	if BalanceByAddress(from, Blockchain()) < amount {
-		return nil, errors.New("not enough coin")
+		return nil, ErrorNoMoney
 	}
 	var txOuts []*TxOut
 	var txIns []*TxIn
 	total := 0
 	uTxOuts := UTxOutsByAddress(from, Blockchain())
-
 	for _, uTxOut := range uTxOuts {
 		if total >= amount {
 			break
@@ -137,12 +130,10 @@ func makeTx(from, to string, amount int) (*Tx, error) {
 		txIns = append(txIns, txIn)
 		total += uTxOut.Amount
 	}
-
 	if change := total - amount; change != 0 {
 		changeTxOut := &TxOut{from, change}
 		txOuts = append(txOuts, changeTxOut)
 	}
-
 	txOut := &TxOut{to, amount}
 	txOuts = append(txOuts, txOut)
 	tx := &Tx{
@@ -185,4 +176,5 @@ func (m *mempool) AddPeerTx(tx *Tx) {
 	defer m.m.Unlock()
 
 	m.Txs[tx.ID] = tx
+
 }

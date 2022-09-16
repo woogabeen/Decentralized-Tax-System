@@ -16,10 +16,6 @@ const (
 	allowedRange       int = 2
 )
 
-var b *blockchain
-
-var once sync.Once
-
 type blockchain struct {
 	NewestHash        string `json:"newestHash"`
 	Height            int    `json:"height"`
@@ -27,12 +23,11 @@ type blockchain struct {
 	m                 sync.Mutex
 }
 
+var b *blockchain
+var once sync.Once
+
 func (b *blockchain) restore(data []byte) {
 	utils.FromBytes(b, data)
-}
-
-func persistBlockchain(b *blockchain) {
-	db.SaveCheckpoint(utils.ToBytes(b))
 }
 
 func (b *blockchain) AddBlock() *Block {
@@ -40,8 +35,12 @@ func (b *blockchain) AddBlock() *Block {
 	b.NewestHash = block.Hash
 	b.Height = block.Height
 	b.CurrentDifficulty = block.Difficulty
-	persistBlockchain(b)
+	persistBlockhain(b)
 	return block
+}
+
+func persistBlockhain(b *blockchain) {
+	db.SaveCheckpoint(utils.ToBytes(b))
 }
 
 func Blocks(b *blockchain) []*Block {
@@ -84,7 +83,6 @@ func recalculateDifficulty(b *blockchain) int {
 	lastRecalculatedBlock := allBlocks[difficultyInterval-1]
 	actualTime := (newestBlock.Timestamp / 60) - (lastRecalculatedBlock.Timestamp / 60)
 	expectedTime := difficultyInterval * blockInterval
-
 	if actualTime <= (expectedTime - allowedRange) {
 		return b.CurrentDifficulty + 1
 	} else if actualTime >= (expectedTime + allowedRange) {
@@ -130,6 +128,7 @@ func UTxOutsByAddress(address string, b *blockchain) []*UTxOut {
 		}
 	}
 	return uTxOuts
+
 }
 
 func BalanceByAddress(address string, b *blockchain) int {
@@ -159,7 +158,6 @@ func Blockchain() *blockchain {
 func Status(b *blockchain, rw http.ResponseWriter) {
 	b.m.Lock()
 	defer b.m.Unlock()
-
 	utils.HandleErr(json.NewEncoder(rw).Encode(b))
 }
 
@@ -169,9 +167,8 @@ func (b *blockchain) Replace(newBlocks []*Block) {
 	b.CurrentDifficulty = newBlocks[0].Difficulty
 	b.Height = len(newBlocks)
 	b.NewestHash = newBlocks[0].Hash
-	persistBlockchain(b)
+	persistBlockhain(b)
 	db.EmptyBlocks()
-
 	for _, block := range newBlocks {
 		persistBlock(block)
 	}
@@ -187,7 +184,7 @@ func (b *blockchain) AddPeerBlock(newBlock *Block) {
 	b.CurrentDifficulty = newBlock.Difficulty
 	b.NewestHash = newBlock.Hash
 
-	persistBlockchain(b)
+	persistBlockhain(b)
 	persistBlock(newBlock)
 
 	for _, tx := range newBlock.Transactions {
@@ -196,4 +193,5 @@ func (b *blockchain) AddPeerBlock(newBlock *Block) {
 			delete(m.Txs, tx.ID)
 		}
 	}
+
 }

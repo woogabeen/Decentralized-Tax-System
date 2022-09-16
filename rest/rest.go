@@ -10,7 +10,6 @@ import (
 	"github.com/WoodoCoin/p2p"
 	"github.com/WoodoCoin/utils"
 	"github.com/WoodoCoin/wallet"
-
 	"github.com/gorilla/mux"
 )
 
@@ -18,17 +17,9 @@ var port string
 
 type url string
 
-type myWalletResponse struct {
-	Address string `json:"address"`
-}
-
-type errorResponse struct {
-	ErrorMessage string `json:"errorMessage"`
-}
-
-type addTxPayload struct {
-	To     string
-	Amount int
+func (u url) MarshalText() ([]byte, error) {
+	url := fmt.Sprintf("http://localhost%s%s", port, u)
+	return []byte(url), nil
 }
 
 type urlDescription struct {
@@ -43,17 +34,21 @@ type balanceResponse struct {
 	Balance int    `json:"balance"`
 }
 
+type myWalletResponse struct {
+	Address string `json:"address"`
+}
+
+type errorResponse struct {
+	ErrorMessage string `json:"errorMessage"`
+}
+
+type addTxPayload struct {
+	To     string
+	Amount int
+}
+
 type addPeerPayload struct {
 	Address, Port string
-}
-
-func (u url) MarshalText() ([]byte, error) {
-	url := fmt.Sprintf("http://localhost%s%s", port, u)
-	return []byte(url), nil
-}
-
-func (u urlDescription) String() string {
-	return "url Description"
 }
 
 func documentation(rw http.ResponseWriter, r *http.Request) {
@@ -63,51 +58,45 @@ func documentation(rw http.ResponseWriter, r *http.Request) {
 			Method:      "GET",
 			Description: "See Documentation",
 		},
-
 		{
 			URL:         url("/status"),
 			Method:      "GET",
 			Description: "See the Status of the Blockchain",
 		},
-
 		{
 			URL:         url("/blocks"),
-			Method:      "POST",
+			Method:      "GET",
 			Description: "See All Blocks",
 		},
-
 		{
 			URL:         url("/blocks"),
 			Method:      "POST",
-			Description: "Add a Block",
-			Payload:     "data: string",
+			Description: "Add A Block",
+			Payload:     "data:string",
 		},
-
 		{
 			URL:         url("/blocks/{hash}"),
-			Method:      "POST",
-			Description: "See a Block",
+			Method:      "GET",
+			Description: "See A Block",
 		},
-
 		{
 			URL:         url("/balance/{address}"),
 			Method:      "GET",
 			Description: "Get TxOuts for an Address",
 		},
-
 		{
 			URL:         url("/ws"),
 			Method:      "GET",
 			Description: "Upgrade to WebSockets",
 		},
 	}
-	json.NewEncoder(rw).Encode(data)
+	utils.HandleErr(json.NewEncoder(rw).Encode(data))
 }
 
 func blocks(rw http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		json.NewEncoder(rw).Encode(blockchain.Blocks(blockchain.Blockchain()))
+		utils.HandleErr(json.NewEncoder(rw).Encode(blockchain.Blocks(blockchain.Blockchain())))
 	case "POST":
 		newBlock := blockchain.Blockchain().AddBlock()
 		p2p.BroadcastNewBlock(newBlock)
@@ -120,12 +109,15 @@ func block(rw http.ResponseWriter, r *http.Request) {
 	hash := vars["hash"]
 	block, err := blockchain.FindBlock(hash)
 	encoder := json.NewEncoder(rw)
-
 	if err == blockchain.ErrNotFound {
-		encoder.Encode(errorResponse{fmt.Sprint(err)})
+		utils.HandleErr(encoder.Encode(errorResponse{fmt.Sprint(err)}))
 	} else {
-		encoder.Encode(block)
+		utils.HandleErr(encoder.Encode(block))
 	}
+}
+
+func status(rw http.ResponseWriter, r *http.Request) {
+	blockchain.Status(blockchain.Blockchain(), rw)
 }
 
 func jsonContentTypeMiddleware(next http.Handler) http.Handler {
@@ -134,16 +126,11 @@ func jsonContentTypeMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(rw, r)
 	})
 }
-
 func loggerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		fmt.Println(r.URL)
+		fmt.Println(r.RequestURI)
 		next.ServeHTTP(rw, r)
 	})
-}
-
-func status(rw http.ResponseWriter, r *http.Request) {
-	blockchain.Status(blockchain.Blockchain(), rw)
 }
 
 func balance(rw http.ResponseWriter, r *http.Request) {
@@ -172,7 +159,7 @@ func transactions(rw http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(rw).Encode(errorResponse{err.Error()})
 		return
 	}
-	go p2p.BroadcastNewTx(tx)
+	p2p.BroadcastNewTx(tx)
 	rw.WriteHeader(http.StatusCreated)
 }
 
@@ -186,7 +173,7 @@ func peers(rw http.ResponseWriter, r *http.Request) {
 	case "POST":
 		var payload addPeerPayload
 		json.NewDecoder(r.Body).Decode(&payload)
-		p2p.AddPeer(payload.Address, payload.Port, port)
+		p2p.AddPeer(payload.Address, payload.Port, port[1:], true)
 		rw.WriteHeader(http.StatusOK)
 	case "GET":
 		json.NewEncoder(rw).Encode(p2p.AllPeers(&p2p.Peers))

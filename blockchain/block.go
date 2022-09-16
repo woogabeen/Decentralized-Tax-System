@@ -9,8 +9,6 @@ import (
 	"github.com/WoodoCoin/utils"
 )
 
-var ErrNotFound = errors.New("block not found")
-
 type Block struct {
 	Hash         string `json:"hash"`
 	PrevHash     string `json:"prevHash,omitempty"`
@@ -24,6 +22,8 @@ type Block struct {
 func persistBlock(b *Block) {
 	db.SaveBlock(b.Hash, utils.ToBytes(b))
 }
+
+var ErrNotFound = errors.New("block not found")
 
 func (b *Block) restore(data []byte) {
 	utils.FromBytes(b, data)
