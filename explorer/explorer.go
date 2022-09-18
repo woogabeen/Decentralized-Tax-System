@@ -7,23 +7,21 @@ import (
 	"net/http"
 
 	"github.com/WoodoCoin/blockchain"
-	"github.com/gorilla/mux"
+)
+
+const (
+	templateDir string = "explorer/templates/"
 )
 
 var templates *template.Template
 
-const (
-	port        string = ":4000"
-	templateDir string = "explorer/templates/"
-)
-
-type HomeData struct {
+type homeData struct {
 	PageTitle string
 	Blocks    []*blockchain.Block
 }
 
 func home(rw http.ResponseWriter, r *http.Request) {
-	data := HomeData{"Home", nil}
+	data := homeData{"Home", nil}
 	templates.ExecuteTemplate(rw, "home", data)
 }
 
@@ -38,11 +36,11 @@ func add(rw http.ResponseWriter, r *http.Request) {
 }
 
 func Start(port int) {
-	router := mux.NewRouter()
+	handler := http.NewServeMux()
 	templates = template.Must(template.ParseGlob(templateDir + "pages/*.gohtml"))
 	templates = template.Must(templates.ParseGlob(templateDir + "partials/*.gohtml"))
-	router.HandleFunc("/", home)
-	router.HandleFunc("/add", add)
-	fmt.Printf("Listening on http://localhost%d\n", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), router))
+	handler.HandleFunc("/", home)
+	handler.HandleFunc("/add", add)
+	fmt.Printf("Listening on http://localhost:%d\n", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), handler))
 }

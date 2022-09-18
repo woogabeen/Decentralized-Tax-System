@@ -7,14 +7,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type peer struct {
-	key     string
-	address string
-	port    string
-	conn    *websocket.Conn
-	inbox   chan []byte
-}
-
 type peers struct {
 	v map[string]*peer
 	m sync.Mutex
@@ -24,11 +16,18 @@ var Peers peers = peers{
 	v: make(map[string]*peer),
 }
 
+type peer struct {
+	key     string
+	address string
+	port    string
+	conn    *websocket.Conn
+	inbox   chan []byte
+}
+
 func AllPeers(p *peers) []string {
 	p.m.Lock()
 	defer p.m.Unlock()
 	var keys []string
-
 	for key := range p.v {
 		keys = append(keys, key)
 	}
@@ -76,8 +75,8 @@ func initPeer(conn *websocket.Conn, address, port string) *peer {
 		key:     key,
 		port:    port,
 	}
-	Peers.v[key] = p
 	go p.read()
 	go p.write()
+	Peers.v[key] = p
 	return p
 }

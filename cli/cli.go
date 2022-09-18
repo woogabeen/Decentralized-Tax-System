@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"runtime"
 
 	"github.com/WoodoCoin/explorer"
 	"github.com/WoodoCoin/rest"
@@ -13,9 +12,9 @@ import (
 func usage() {
 	fmt.Printf("Welcome to Woodo\n\n")
 	fmt.Printf("Please use the following flags:\n\n")
-	fmt.Printf("-port:   Set the PORT of the Server\n")
-	fmt.Printf("-mode:   Choose between 'HTML' and 'rest'\n\n")
-	runtime.Goexit()
+	fmt.Printf("-port:		Set the PORT of the server\n")
+	fmt.Printf("-mode:		Choose between 'html' and 'rest'\n\n")
+	os.Exit(0)
 }
 
 func Start() {
@@ -23,8 +22,8 @@ func Start() {
 		usage()
 	}
 
-	port := flag.Int("port", 4000, "Set port of the Server")
-	mode := flag.String("mode", "rest", "Choose between 'HTML' and 'rest'")
+	port := flag.Int("port", 4000, "Set port of the server")
+	mode := flag.String("mode", "rest", "Choose between 'html' and 'rest'")
 
 	flag.Parse()
 
@@ -36,6 +35,4 @@ func Start() {
 	default:
 		usage()
 	}
-
-	fmt.Println(*port, *mode)
 }
