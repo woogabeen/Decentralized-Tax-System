@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	fileName string = "nomadcoin.wallet"
+	fileName string = "Woodo.wallet"
 )
 
 type fileLayer interface {
