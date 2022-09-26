@@ -47,6 +47,11 @@ type addTxPayload struct {
 	Amount int
 }
 
+type addTaxPayment struct {
+	To        string
+	TaxValInt int
+}
+
 type addPeerPayload struct {
 	Address, Port string
 }
@@ -163,6 +168,19 @@ func transactions(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusCreated)
 }
 
+func PayTax(rw http.ResponseWriter, r *http.Request) {
+	var payTax addTaxPayment
+	utils.HandleErr(json.NewDecoder(r.Body).Decode(&payTax))
+	tax, err := blockchain.Mempool().AddTx(payTax.To, payTax.TaxValInt)
+	if err != nil {
+		rw.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(rw).Encode(errorResponse{err.Error()})
+		return
+	}
+	p2p.BroadcastNewTx(tax)
+	rw.WriteHeader(http.StatusCreated)
+}
+
 func myWallet(rw http.ResponseWriter, r *http.Request) {
 	address := wallet.Wallet().Address
 	json.NewEncoder(rw).Encode(myWalletResponse{Address: address})
@@ -192,6 +210,7 @@ func Start(aPort int) {
 	router.HandleFunc("/mempool", mempool).Methods("GET")
 	router.HandleFunc("/wallet", myWallet).Methods("GET")
 	router.HandleFunc("/transactions", transactions).Methods("POST")
+	router.HandleFunc("/pay_Tax", PayTax).Methods("POST")
 	router.HandleFunc("/ws", p2p.Upgrade).Methods("GET")
 	router.HandleFunc("/peers", peers).Methods("GET", "POST")
 	fmt.Printf("Listening on http://localhost%s\n", port)

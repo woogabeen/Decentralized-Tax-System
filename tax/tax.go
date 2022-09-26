@@ -14,6 +14,7 @@ var qualFamilyNum = realFamilyNum + childrenNum
 var monthlySalary int
 var taxRatio int
 var standardPosition int
+var TaxValInt = int(TaxVal)
 
 func CalcTax() (TaxVal float64) {
 	fmt.Printf("이 간이세액표의 해당 세액은 소득세법에 따른 근로소득공제, 기본공제, 특별소득공제 및 특별세액공제 중 일부, 연금보험료공제, 근로소득세액공제와 해당 세율을 반영하여 계산한 금액임. 이 경우 “특별소득공제 및 특별세액공제 중 일부”는 다음의 계산식에 따라 계산한 금액을 소득공제하여 반영한 것임.\n")
@@ -130,8 +131,4 @@ func CalcTax() (TaxVal float64) {
 	fmt.Printf("입력하신 데이터를 바탕으로 계산한 공제대상가족의 수는 %d명 입니다\n", qualFamilyNum)
 	fmt.Printf("이때의 원천징수세액은 %d원(소득세 %d원, 지방소득세 %d원) 입니다.", int64(TaxVal*1.1), int64(TaxVal), int64(TaxVal*0.1))
 	return TaxVal
-}
-
-func PayTax() {
-
 }
