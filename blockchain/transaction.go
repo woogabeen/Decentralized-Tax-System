@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	minerReward int = 50
+	minerReward int = 100000000000
 )
 
 type mempool struct {

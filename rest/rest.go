@@ -8,6 +8,7 @@ import (
 
 	"github.com/WoodoCoin/blockchain"
 	"github.com/WoodoCoin/p2p"
+	"github.com/WoodoCoin/tax"
 	"github.com/WoodoCoin/utils"
 	"github.com/WoodoCoin/wallet"
 	"github.com/gorilla/mux"
@@ -16,6 +17,8 @@ import (
 var port string
 
 type url string
+
+var TaxValInt = int(tax.TaxVal)
 
 func (u url) MarshalText() ([]byte, error) {
 	url := fmt.Sprintf("http://localhost%s%s", port, u)
@@ -45,11 +48,6 @@ type errorResponse struct {
 type addTxPayload struct {
 	To     string
 	Amount int
-}
-
-type addTaxPayment struct {
-	To        string
-	TaxValInt int
 }
 
 type addPeerPayload struct {
@@ -168,10 +166,18 @@ func transactions(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusCreated)
 }
 
+type addTaxPayment struct {
+	To     string
+	Amount int
+}
+
 func PayTax(rw http.ResponseWriter, r *http.Request) {
 	var payTax addTaxPayment
+	payTax.Amount = TaxValInt
+
 	utils.HandleErr(json.NewDecoder(r.Body).Decode(&payTax))
-	tax, err := blockchain.Mempool().AddTx(payTax.To, payTax.TaxValInt)
+	tax, err := blockchain.Mempool().AddTx(payTax.To, payTax.Amount)
+
 	if err != nil {
 		rw.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(rw).Encode(errorResponse{err.Error()})
