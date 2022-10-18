@@ -111,7 +111,7 @@ func makeCoinbaseTx(address string) *Tx {
 	return &tx
 }
 
-var ErrorNoMoney = errors.New("not enough 돈")
+var ErrorNoMoney = errors.New("not enough money")
 var ErrorNotValid = errors.New("Tx Invalid")
 
 func makeTx(from, to string, amount int) (*Tx, error) {
