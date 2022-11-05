@@ -4,11 +4,10 @@ http://localhost:3000/status
 ###
 http://localhost:1000/peers
 ###
-http://localhost:4000/mempool
+http://localhost:1000/mempool
 ###
 http://localhost:1000/balance/Government
-###
-POST http://localhost:1000/blocks
+
 ###
 POST http://localhost:3000/transactions
 
@@ -16,6 +15,7 @@ POST http://localhost:3000/transactions
     "to":"Woo",
     "amount":0
 }
+
 ###
 POST http://localhost:3000/peers
 
@@ -23,6 +23,10 @@ POST http://localhost:3000/peers
     "address": "127.0.0.1",
     "port": "2000"
 }
+
+###
+POST http://localhost:1000/blocks
+
 ###
 POST http://localhost:1000/pay_Tax
 
